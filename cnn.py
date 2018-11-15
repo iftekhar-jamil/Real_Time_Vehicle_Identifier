@@ -1,0 +1,88 @@
+# Convolutional Neural Network
+
+# Installing Theano
+# pip install --upgrade --no-deps git+git://github.com/Theano/Theano.git
+
+# Installing Tensorflow
+# pip install tensorflow
+
+# Installing Keras
+# pip install --upgrade keras
+
+# Part 1 - Building the CNN
+
+# Importing the Keras libraries and packages
+from keras.models import Sequential
+from keras.layers import Conv2D
+from keras.layers import MaxPooling2D
+from keras.layers import Flatten
+from keras.layers import Dense,Dropout
+
+
+# Initialising the CNN
+classifier = Sequential()
+
+# Step 1 - Convolution
+classifier.add(Conv2D(32, (3, 3), input_shape = (128, 128, 3), activation = 'relu'))
+
+# Step 2 - Pooling
+classifier.add(MaxPooling2D(pool_size = (2, 2)))
+
+# Adding a second convolutional layer
+classifier.add(Conv2D(32, (3, 3), activation = 'relu'))
+classifier.add(MaxPooling2D(pool_size = (2, 2)))
+
+# Step 3 - Flattening
+classifier.add(Flatten())
+
+# Step 4 - Full connection
+classifier.add(Dropout(0.3))
+classifier.add(Dense(128))
+classifier.add(Dense(units = 2, activation = 'softmax'))
+
+# Compiling the CNN
+classifier.compile(optimizer = 'adam', loss = 'categorical_crossentropy', metrics = ['accuracy'])
+
+# Part 2 - Fitting the CNN to the images
+
+
+
+from keras.preprocessing.image import ImageDataGenerator
+
+#image augmentattion
+train_datagen = ImageDataGenerator(rescale = 1./255,
+                                   shear_range = 0.2,
+                                   zoom_range = 0.2,
+                                   rotation_range= 3,
+                                   #fill_mode = 'nearest',
+                                   #horizontal_flip = True
+                                   )
+
+test_datagen = ImageDataGenerator(rescale = 1./255,
+                                   shear_range = 0.2,
+                                   zoom_range = 0.2,
+                                   rotation_range= 3,
+                                   #fill_mode = 'nearest',
+                                   #horizontal_flip = True
+                                   )
+
+training_set = train_datagen.flow_from_directory('dataset/training_set',
+                                                 target_size = (128, 128),
+                                                 batch_size = 20,
+                                                 class_mode = 'categorical')
+
+test_set = test_datagen.flow_from_directory('dataset/test_set',
+                                            target_size = (128, 128),
+                                            batch_size = 20,
+                                            class_mode = 'categorical')
+
+classifier.fit_generator(training_set,
+                         steps_per_epoch = 1425//20,
+                         epochs = 5,
+                         validation_data = test_set,
+                         validation_steps = 20)
+score = classifier.evaluate_generator(generator=test_set)
+print("ac",score[1])
+test_set.class_indices
+
+classifier.save("car_bike_new.h5")
